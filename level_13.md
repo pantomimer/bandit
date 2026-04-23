@@ -22,31 +22,45 @@ ssh bandit13@bandit.labs.overthewire.org -p 2220
 
 パスワードは Level 12 で入手したもの（`passwords.txt` の `bandit13` 行）を使う。
 
-### Step 2: 秘密鍵を確認
+### Step 2: 秘密鍵の内容をコピーする
 
 ```bash
-ls
+cat sshkey.private
 ```
 
-`sshkey.private` があることを確認する。
+表示された内容（`-----BEGIN OPENSSH PRIVATE KEY-----` から始まる文字列）を
+**すべてコピー**しておく。
 
-### Step 3: 秘密鍵を使って bandit14 にログイン
+### Step 3: ローカルマシンに鍵ファイルを作る
 
-同じサーバー内に `localhost`（自分自身）へ SSH する。
+bandit13 のセッションは一旦そのままにして、**ローカルの別ターミナル**を開く。
 
 ```bash
-ssh -i sshkey.private bandit14@localhost -p 2220
+# ローカルのターミナルで実行
+vi bandit14.key
 ```
 
-パスワードを聞かれずにそのままログインできる。
+コピーした内容を貼り付けて保存する（`Ctrl+X` → `Y` → `Enter`）。
 
-### Step 4: bandit14 のパスワードを読む
+続いて、秘密鍵ファイルに適切な権限を設定する（これをしないと SSH が鍵を拒否する）。
+
+```bash
+chmod 600 bandit14.key
+```
+
+### Step 4: ローカルから bandit14 に直接ログイン
+
+```bash
+ssh -i bandit14.key bandit14@bandit.labs.overthewire.org -p 2220
+```
+
+### Step 5: パスワードファイルを確認
 
 ```bash
 cat /etc/bandit_pass/bandit14
+MU4VWeTyJk8ROof1qqmcBPaLh7lDCPvS
 ```
 
-表示された文字列が **bandit14 のパスワード**。
 
 ## ポイント
 
@@ -78,10 +92,22 @@ ssh -i sshkey.private bandit14@localhost -p 2220
 
 ---
 
-### `localhost` とは？
+### なぜ localhost が使えないのか？
 
-`localhost` は「今接続しているサーバー自身」を指すホスト名。
-つまり bandit13 として接続中のサーバーに、bandit14 として再ログインしている。
+Bandit サーバーは負荷対策のため、サーバー自身（localhost）からの SSH 接続をブロックしている。
+そのため、一度ローカルマシンに秘密鍵を持ち出して、外から bandit14 に接続する必要がある。
+
+---
+
+### `chmod 600` が必要な理由
+
+SSH は秘密鍵ファイルの権限が緩すぎると、セキュリティ上の理由でエラーを出して拒否する。
+
+```
+Permissions 0644 for 'bandit14.key' are too open.
+```
+
+`chmod 600` で「自分だけ読み書きできる」権限に設定することで解消できる。
 
 ---
 
